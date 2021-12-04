@@ -77,13 +77,13 @@ def calibrate(camera):
     patternPoints = numpy.zeros( (numpy.prod((env.calibration.patternWidth, env.calibration.patternHeight)), 3), numpy.float32 )
     patternPoints[:,:2] = numpy.indices((env.calibration.patternWidth, env.calibration.patternHeight)).T.reshape(-1, 2)
     patternPoints *= env.calibration.squareSize
-    objpoints = []
-    imgpoints = []
+    objectPoints = []
+    imagePoints = []
     isInterrupted = False
 
     capture = initCamera(camera)
 
-    while len(objpoints) < env.calibration.referenceImageNum:
+    while len(objectPoints) < env.calibration.referenceImageNum:
 
         ret, img = capture.read()
         img = cv2.resize(img , (env.width, env.height))
@@ -95,11 +95,11 @@ def calibrate(camera):
         ret, corner = cv2.findChessboardCorners(gray, (env.calibration.patternWidth, env.calibration.patternHeight))
 
         if ret == True:
-            print(str(len(objpoints)+1) + "/" + str(env.calibration.referenceImageNum))
+            print(str(len(objectPoints)+1) + "/" + str(env.calibration.referenceImageNum))
             term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 30, 0.1)
             cv2.cornerSubPix(gray, corner, (5,5), (-1,-1), term)
-            imgpoints.append(corner.reshape(-1, 2))
-            objpoints.append(patternPoints)
+            imagePoints.append(corner.reshape(-1, 2))
+            objectPoints.append(patternPoints)
 
         cv2.imshow('image', img)
         if cv2.waitKey(100) >= 0:
@@ -109,7 +109,7 @@ def calibrate(camera):
     if isInterrupted:
         print("interrupted.")
     else:
-        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objectPoints, imagePoints, gray.shape[::-1], None, None)
 
         print("mtx: {}".format(mtx))
         print("dist: {}".format(dist))
@@ -383,9 +383,9 @@ def observeLOS(relay, isMain):
             topRight = numpy.array(topRightPoint)
             bottomLeft = numpy.array(bottomLeftPoint)
 
-            # 定義した座標系の原点をO, カメラにちょうど収まって写る16:9の四角形の左上の点をA, 右上の点をB, 右下の点をC, 左下の点をDとする
-            # 画像の重心座標を縦横それぞれ0.0 - 1.0 の比率でs,tと表した時、
-            # 画像上の重心座標を16:9の四角形に対応させて得られる点Pは
+            # 定義した座標系の原点をO, 「ちょうどカメラにぴったり収まるように写る16:9の長方形」の左上の点をA, 右上の点をB, 右下の点をC, 左下の点をDとする
+            # 画像内の重心座標を縦横それぞれ0.0 - 1.0 の比率でs,tと表した時、
+            # 画像内の重心座標を16:9の四角形に対応させて得られる点Pは
             # →OP = (1-s)*→OA + s*→OB + (1-t)*→OA + t*→OD
             pointx = (topLeft * (1 - x / env.width) + topRight * x / env.width)
             pointy = (topLeft * (1 - y / env.height) + bottomLeft * y / env.height)
@@ -562,6 +562,7 @@ def main():
         framesStr = "{:2d}".format(int(relay.frames)) if relay.frames is not None else " -"
         infoStr = "{}sec {}m {}frames".format(timeIntervalStr, distanceStr, framesStr)
         cv2.putText(screen, infoStr, (30,320), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        # その他動作状況を表す値を表示
         subInfoStr = "main({:3d}fps{:3d}que) sub({:3d}fps{:3d}que)".format(relay.mainFps, relay.mainQueSize, relay.subFps, relay.subQueSize)
         cv2.putText(screen, subInfoStr, (30,360), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
         cv2.imshow("Screen", screen)
