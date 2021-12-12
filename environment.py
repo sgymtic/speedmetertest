@@ -42,16 +42,18 @@ class Camera:
     hsvmax = None
     medianBlurSize = None
 
-def R(n,th):  # u軸θ回転の行列R (Rodriguesの回転公式)
+# n軸θ回転の行列R (ロドリゲスの回転公式)
+def R(n,th):  
     n = n.reshape([3,1])
     # Rn(θ) = Icosθ + n^sinθ + nn'(1-cosθ)
     return numpy.cos(th)*numpy.eye(3) + numpy.sin(th)*vecamera2skew(n) + (1-numpy.cos(th))*n@n.T
 
-def vecamera2skew(v):  # v∈R^3-->v_× (外積作用の行列)
+# v∈R^3-->v_× (外積作用の行列)
+def vecamera2skew(v):  
     v = v.reshape([3,])
     return numpy.array([[0,-v[2],v[1]], [v[2],0,-v[0]], [-v[1],v[0],0]])
 
-# カメラにちょうど収まって写る16:9の四角形の四隅の座標を計算する
+# 「カメラにちょうど収まって写る4:3の四角形」の四隅の座標を計算する
 # カメラで撮影した（キャリブレーション後の）中央に写る任意の場所の座標と、左上に写る任意の場所の座標を利用する
 def getCorners(position, centerPoint, topLeftPoint):
 
@@ -68,7 +70,7 @@ def getCorners(position, centerPoint, topLeftPoint):
     topLeft = numpy.array([x, y, z]).reshape([3,1])
 
     # カメラと、カメラで撮影した（キャリブレーション後の）中央に写る任意の場所を結ぶ直線を軸に
-    # 16:9の四角形の左上の点を回転することで、右上、右下、左下の座標を求めていく
+    # 「4:3の四角形」の左上の点を回転することで、右上、右下、左下の座標を求めていく
 
     v = center - camera # カメラ映像の中央を表す直線が原点(0,0,0)を通る直線になるように平行移動
     o = topLeft - camera # カメラ映像の中央を表す直線も平行移動
